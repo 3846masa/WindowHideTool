@@ -1,0 +1,1284 @@
+#module
+
+/*-----夋憸斾妑張棟-----*/
+/* 嶲徠:http://hspdev-wiki.net/?As */
+
+//斾妑彍奜怓偺忣曬傪偡傋偰僋儕傾
+#deffunc imghclsdel
+dim IMGHCOLOR,1:return
+ 
+//	斾妑偡傞懳徾偐傜彍奜偡傞怓傪巜掕
+//  imghclsadd R,G,B
+#deffunc imghclsadd int p1, int p2, int p3
+if IMGHCOLOR=0{sdim IMGHCOLOR,64,0:IMGHCOLOR.(length(IMGHCOLOR)-1)=""+p1+","+p2+","+p3
+}else{:IMGHCOLOR.(length(IMGHCOLOR))=""+p1+","+p2+","+p3:}:return
+
+//imgh 斾妑斖埻X, 斾妑斖埻Y, 斾妑尦夋憸忣曬偑擖偭偨曄悢,斾妑愭夋憸忣曬偑擖偭偨曄悢,濨枂偝
+//斾妑尦夋憸曄悢柤 = 夋憸偑偁傞僶僢僼傽ID, 嵍忋X丄嵍忋Y
+//夋憸偺憡帡棪偑亾偱婣傝傑偡丅
+#defcfunc imgh int p1,int p2,array p3, array p4,int p5
+s2=ginfo(3):s8=0:gsel p3:mref s1,66:s11=ginfo_winx:s12=ginfo_winy:gsel p4:mref s9,66:s13=ginfo_winx
+s14=ginfo_winy:gsel s2:if (""+p3(0)+","+p3(1)+","+p3(2))!IMGHROOT{IMGHROOT=""+p3(0)+","+p3(1)+","+p3(2)
+s4=0:dim IMGHROOTTOP,p1+1,p2+1,3:gsel p3(0):repeat p2:s3=0:repeat p1:s10=((s12-1-(s4+p3(2)))*s11+(s3+p3(1)))*3
+IMGHROOTTOP.s3.s4.0=peek(s1,s10+2):IMGHROOTTOP.s3.s4.1=peek(s1,s10+1):IMGHROOTTOP.s3.s4.2=peek(s1,s10)
+s3+:loop:s4+:loop}gsel p4(0):s4=0:s5=1:repeat p2:s3=0:repeat p1:s7=0:foreach IMGHCOLOR
+if (""+IMGHROOTTOP.s3.s4.0+","+IMGHROOTTOP.s3.s4.1+","+IMGHROOTTOP.s3.s4.2)=IMGHCOLOR.cnt{s7=1}loop
+if s7!1{s10=((s14-1-(s4+p4(2)))*s13+(s3+p4(1)))*3:s15=peek(s9,s10+2):s16=peek(s9,s10+1):s17=peek(s9,s10)
+s7=0:foreach IMGHCOLOR:if (""+s15+","+s16+","+s17)=IMGHCOLOR(cnt){s7=1}loop:if s7!1{
+if (absf(IMGHROOTTOP(s3,s4,0)-s15)<=p5)&(absf(IMGHROOTTOP(s3,s4,1)-s16)<=p5)&(absf(IMGHROOTTOP(s3,s4,2)-s17)<=p5){s8+}else{s5=0} }else{
+s8+} }else{s8+}s3+:loop:s4+:loop:gsel s2:s8=double(s8)/double((p1*p2)):return s8
+/*-----夋憸斾妑張棟-----*/
+
+/*-----榋妏宍昤夋張棟-----*/
+#deffunc hexagon double R,array O
+	lambda = (360/6)
+	pos O(0)+R,O(1)
+	for deg,lambda,360+lambda,lambda
+		line O(0)+(R*cos(deg2rad(deg))),O(1)+(R*sin(deg2rad(deg)))
+	next
+	return
+/*-----榋妏宍昤夋張棟-----*/
+
+#global
+
+/*-----僨僗僋僩僢僾夋憸僉儍僾僠儍僾儔僌僀儞-----*/
+#uselib "gdi32.dll"
+#cfunc CreateDC "CreateDCA" sptr,sptr,sptr,int
+#func DeleteDC "DeleteDC"  int
+#func BitBlt "BitBlt" int,int,int,int,int,int,int,int,int
+#func  GetTextExtentPoint32 "GetTextExtentPoint32A" int,int,int,int
+/*-----僨僗僋僩僢僾夋憸僉儍僾僠儍僾儔僌僀儞-----*/
+
+#include "keyhook.hsp" // 僉乕僼僢僋幚憰DLL:http://tu3.jp/
+#include "user32.as" // Win32API偺棙梡
+#include "hscallbk.as" // 僐乕儖僶僢僋娭悢幚憰僾儔僌僀儞 for HSP3:http://chokuto.ifdef.jp/
+#include "ds_play.as" // DirectSound嵞惗僾儔僌僀儞 for HSP:http://www.binzume.net/
+#include "hspdsc.as" // DirectShow儀乕僗僉儍僾僠儍僨僶僀僗僾儔僌僀儞:http://homepage2.nifty.com/MJHS/
+
+/*-----僐乕儖僶僢僋梡愝掕-----*/
+; 僐乕儖僶僢僋娭悢偺娭悢宍幃傪掕媊
+; ( DLL柤偍傛傃娭悢柤偼僟儈乕 (嬻暥帤楍) )
+; ( int, double, str, comobj 宆堷悢偺傒巜掕壜擻 )
+#uselib ""
+#func EnumWindowProc "" int,int
+
+#define NULL        0
+#define SRCCOPY     0x00CC0020
+#define CAPTUREBLT  0x40000000
+/*-----僐乕儖僶僢僋梡愝掕-----*/
+
+/*-----榞側偟僂傿儞僪僂梡曄悢-----*/
+#define WM_NCLBUTTONDOWN $000000A1
+#define HTCAPTION 2
+#define HTMINBUTTON 8
+/*-----榞側偟僂傿儞僪僂梡曄悢------*/
+
+/*-----僒僂儞僪弶婜壔-----*/
+// ds_play.as 棙梡
+ds_init
+;onexit gosub *exit
+ds_open 1,dir_cur+"/sound/motor_loop.wav"
+ds_open 2,dir_cur+"/sound/motor_end.wav"
+ds_open 3,dir_cur+"/sound/error.wav"
+ds_open 5,dir_cur+"/sound/bgm.wav"
+ds_setvol 5,9000
+/*-----僒僂儞僪弶婜壔-----*/
+
+/*-----僞僀僩儖愝掕-----*/
+title "WindowHideTool by M.M"
+/*-----僞僀僩儖愝掕-----*/
+
+/*-----弶婜愝掕-----*/
+;儊僀儞夋柺傪弶婜壔
+;screen 0
+;廔椆張棟傪愝掕
+onexit goto *exit
+;敾掕僷乕僙儞僥乕僕
+;夋憸斾妑偺曄壔棪偑忋夞傞偲摦嶌
+flag = 0.01
+/*-----弶婜愝掕-----*/
+
+/*-----CV僶僢僼傽(僇儊儔棙梡)弶婜愝掕-----*/
+;CV僶僢僼傽傪弶婜壔
+dsc_Init
+;僇儊儔僨僶僀僗偺庢摼
+sdim name,1024
+;棙梡壜擻側僨僶僀僗偺悢傪庢摼
+dsc_GetDeviceList name
+if stat=0 : dialog "僨僶僀僗偑尒偮偐傝傑偣傫" : end
+/*-----CV僶僢僼傽(僇儊儔棙梡)弶婜愝掕-----*/
+
+/*-----弶婜夋柺-----*/
+phase = 0 ;抜奒曄悢
+// Window嶌惉
+bgscr 0,240,160,0,double(ginfo_dispx-240)/2,double(ginfo_dispy-160)/2
+redraw 0
+color 0:boxf:pos 0,50;:button "廔椆",*exit
+gsel 0,1
+color 230,170,15	: boxf 0, 0, ginfo(12), 25
+color 0				: boxf 2, 2, ginfo(12)-2, 25-3
+color 230,170,15	: boxf 0, 25, ginfo(12), ginfo(13)
+color 0				: boxf 2, 25+2, ginfo(12)-3, ginfo(13)-3
+color 230,170,15	: boxf ginfo(12)-25*2, 0, ginfo(12)-25*1, 25
+color 0				: boxf ginfo(12)-25*2+2, 18, ginfo(12)-25*1-2, 20
+color 230,170,15	: boxf ginfo(12)-25*1, 0, ginfo(12)-25*0, 25
+color 0				: pos ginfo(12)-25*1+5,0: font "俵俽 俹僑僔僢僋", 25 : mes "倃"
+onclick gosub *clickBranch
+;onexit gosub *exit
+
+// 儃僞儞嶌惉
+redraw 0
+color 230,170,15
+moji = "WINDOW HIDE TOOL"
+font "HGP嫵壢彂懱",25,1
+ls=strlen(moji) : dim size,2
+GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+x = size(0) : y = size(1)
+tx = double(ginfo(12)-x)/2 : ty = double(ginfo(13))/2
+pos tx,40 : mes moji
+
+color 230,170,15:boxf 30,70,ginfo(12)-30,100
+color 0
+moji = "Booting Software"
+posx = 30
+boxH = 30
+font "HGP嫵壢彂懱",27,17
+ls=strlen(moji) : dim size,2
+GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+x = size(0) : y = size(1)
+tx = double(ginfo(12)-x)/2 : ty = 70+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+pos tx,ty : mes moji
+
+color 230,170,15:boxf 30,110,ginfo(12)-30,140
+color 0
+moji = "Testing EVA mode"
+posx = 30
+boxH = 30
+font "HGP嫵壢彂懱",25,17
+ls=strlen(moji) : dim size,2
+GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+x = size(0) : y = size(1)
+tx = double(ginfo(12)-x)/2 : ty = 110+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+pos tx,ty : mes moji
+
+redraw 1
+
+repeat
+	getkey key, 66
+       if key == 1 : goto *booting
+       getkey key, 84
+       if key == 1 : goto *hide_eva
+	await
+loop
+stop
+/*-----弶婜夋柺-----*/
+
+/*-----僇儊儔慖戰夋柺-----*/
+*booting
+	phase = 1
+	
+	// Window嶌惉
+	bgscr 0,240,160,0,double(ginfo_dispx-240)/2,double(ginfo_dispy-160)/2
+	redraw 0
+	cls
+	color 0:boxf:pos 0,50;:button "廔椆",*exit
+	gsel 0,1
+	color 230,170,15	: boxf 0, 0, ginfo(12), 25
+	color 0				: boxf 2, 2, ginfo(12)-2, 25-3
+	color 230,170,15	: boxf 0, 25, ginfo(12), ginfo(13)
+	color 0				: boxf 2, 25+2, ginfo(12)-3, ginfo(13)-3
+	color 230,170,15	: boxf ginfo(12)-25*2, 0, ginfo(12)-25*1, 25
+	color 0				: boxf ginfo(12)-25*2+2, 18, ginfo(12)-25*1-2, 20
+	color 230,170,15	: boxf ginfo(12)-25*1, 0, ginfo(12)-25*0, 25
+	color 0				: pos ginfo(12)-25*1+5,0: font "俵俽 俹僑僔僢僋", 25 : mes "倃"
+	onclick gosub *clickBranch
+	;onexit gosub *exit
+	
+	color 230,170,15
+	moji = "SELECT CAM DEVICE"
+	font "HGP嫵壢彂懱",25,1
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = double(ginfo(13))/2
+	pos tx,40 : mes moji
+	
+	// 儃僞儞嶌惉
+	;name = "HSP\ncombox\n僐儞儃儃僢僋僗\n僗僋儕僾僩" //僥僗僩梡曄悢
+	pos 30,70
+	font "HGP嫵壢彂懱",20,1
+	objmode 2
+	objsize ginfo(12)-30*2,30 ;僒僀僘傪巜掕
+	combox id,100,name ;僐儞儃儃僢僋僗傪嶌惉
+	objsel stat
+	/*
+	color 230,170,15:boxf 30,70,ginfo(12)-30,100
+	color 0
+	moji = "____"
+	posx = 30
+	boxH = 30
+	font "HGP嫵壢彂懱",30,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 70+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	*/
+	
+	color 230,170,15:boxf 30,110,ginfo(12)-30,140
+	color 0
+	moji = "Select CAM"
+	posx = 30
+	boxH = 30
+	font "HGP嫵壢彂懱",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 110+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	repeat
+		stick key, 0
+		if key&32 : goto *alertDialog
+		await
+	loop
+	
+	stop
+/*-----僇儊儔慖戰夋柺-----*/
+
+/*-----寈崘-----*/
+*alertDialog
+	gsel 0,-1
+	// Window嶌惉
+	bgscr 6,280,205,0,double(ginfo_dispx-280)/2,double(ginfo_dispy-205)/2
+	gsel 6,2
+	redraw 0
+	color 0:boxf:pos 0,50;:button "廔椆",*exit
+	gsel 6,1
+	color 237,57,60	: boxf 0, 0, ginfo(12), ginfo(13)
+	color 0				: boxf 2, 2, ginfo(12)-3, ginfo(13)-3
+	onclick gosub *clickBranchDialog
+	
+	color 237,57,60	: boxf 0, 0, ginfo(12), 25
+	repeat
+		color 0
+		if (cnt\20 >= 10):line 3+cnt,0,3+cnt-10,25
+		if (cnt-6 >= ginfo(12)-10):break
+	loop
+	
+	color 237,57,60	: boxf 0, ginfo(13)-25, ginfo(12), ginfo(13)
+	repeat
+		color 0
+		if (cnt\20 >= 10):line 3+cnt, ginfo(13)-25-3, 3+cnt-10, ginfo(13)-3
+		if (cnt-6 >= ginfo(12)-10):break
+	loop
+	
+	color 237,57,60
+	moji = "寈崘"
+	font "HGP嫵壢彂懱",50,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 30 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	color 237,57,60
+	moji = "憢奿擺屻丄暅婣僗儖僯僴"
+	font "HGP嫵壢彂懱",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 85 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	color 237,57,60
+	moji = "\"ESC\"僉乕儝悢昩墴壓僙儓"
+	font "HGP嫵壢彂懱",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2
+	pos tx, : mes moji
+	
+	color 237,57,60:boxf 30,ginfo(13)-65,ginfo(12)-30,ginfo(13)-35
+	color 0
+	moji = "椆彸"
+	posx = 30
+	boxH = 30
+	font "HGP嫵壢彂懱",30,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = (ginfo(13)-65)+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	repeat
+		stick key, 0
+		if key&32 : goto *play
+		await
+	loop
+	
+	stop
+	
+*clickBranchDialog
+	if wparam == 1 {
+		// 儃僞儞晹暘
+		if ( (30 <= mousex && mousex <= ginfo(12)-30) && (ginfo(13)-65 <= mousey && mousey <= ginfo(13)-35) ){
+			goto *play
+		}
+	}
+	return
+	
+/*-----寈崘-----*/
+
+
+/*-----僇儊儔挷惍-----*/
+*play
+	gsel 0,1
+	gsel 6,-1
+	onclick gosub *clickBranch
+	phase = 2
+	onkey gosub *SettingKey
+	
+	// Window嶌惉
+	bgscr 0,240,420,0,double(ginfo_dispx-240)/2,double(ginfo_dispy-420)/2
+	redraw 0
+	cls
+	color 0:boxf:pos 0,50;:button "廔椆",*exit
+	gsel 0,1
+	color 230,170,15	: boxf 0, 0, ginfo(12), 25
+	color 0				: boxf 2, 2, ginfo(12)-2, 25-3
+	color 230,170,15	: boxf 0, 25, ginfo(12), ginfo(13)
+	color 0				: boxf 2, 25+2, ginfo(12)-3, ginfo(13)-3
+	color 230,170,15	: boxf ginfo(12)-25*2, 0, ginfo(12)-25*1, 25
+	color 0				: boxf ginfo(12)-25*2+2, 18, ginfo(12)-25*1-2, 20
+	color 230,170,15	: boxf ginfo(12)-25*1, 0, ginfo(12)-25*0, 25
+	color 0				: pos ginfo(12)-25*1+5,0: font "俵俽 俹僑僔僢僋", 25 : mes "倃"
+	onclick gosub *clickBranch
+	;onexit gosub *exit
+	
+	gsel 0 ; 儊僀儞夋柺傪傾僋僥傿僽
+	;cls ; 夋柺傪弶婜壔
+	pos 0,30
+	;button gosub "僾儘僷僥傿",*prop ; 僇儊儔偺僾儘僷僥傿傪婲摦偡傞儃僞儞
+	font "",12,16 ; 僼僅儞僩僒僀僘傪愝掕
+	;mes "*僇儊儔偺慜偱摦偄偰傕愒偄墌偑昞帵偝傟側偄応崌\n丂僾儘僷僥傿偺僈儞儅抣傪偄偠偭偰丄塮憸傪柧傞偔偟偰偔偩偝偄丅"
+	;dialog "僂傿儞僪僂傪尦偵栠偡偵偼亂ESC僉乕傪挿墴偟亃偱偡丅\n偦傟偱傕栠傜側偄応崌偼丄摨崼偺[Recovery.exe]傪婲摦偟偰壓偝偄丅",1
+	
+	;gsel 0
+	pos 0,50
+	;button goto "SET CAM",*watch ; 捠忢儌乕僪婲摦儃僞儞
+	;button goto "SET EVA",*watch_eva ; EVA儌乕僪婲摦儃僞儞
+	
+	color 230,170,15:boxf 30,40,ginfo(12)-30,70
+	color 0
+	moji = "Setting CAM"
+	posx = 30
+	boxH = 30
+	font "HGP嫵壢彂懱",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 40+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	color 237,57,60:boxf 30,80,ginfo(12)-30,110
+	color 0
+	moji = "Nomal mode"
+	posx = 30
+	boxH = 30
+	font "HGP嫵壢彂懱",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 80+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	color 237,57,60:boxf 30,120,ginfo(12)-30,150
+	color 0
+	moji = "EVA mode"
+	posx = 30
+	boxH = 30
+	font "HGP嫵壢彂懱",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 120+double(boxH-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	count = 0 ; 僼儗乕儉悢
+	
+	maxpercent = 0.0
+
+	// 僇儊儔婲摦僠僃僢僋
+	;playflag = 0 ;婲摦僼儔僌(僇儊儔偑柍帠偵婲摦偟偨偐妋擣)
+	dsc_SetActiveSel 0 ; 僇儊儔昤夋偡傞夋柺愝掕
+	dsc_Open id ; 僇儊儔傪婲摦
+	if stat<0 : dialog "僄儔乕偑敪惗偟傑偟偨丅",1,"DEVICE-ERROR" : end
+	gsel 0,0 ; 儊僀儞夋柺傪傾僋僥傿僽
+	dsc_ReSize hwnd,10,100,360,240 ; 僇儊儔塮憸傪儕僒僀僘
+	dsc_play hwnd,30,160,ginfo(12)-30*2,double(ginfo(12)-30*2)/4*3 ; 僇儊儔塮憸傪嵞惗
+	if stat<0 : dialog "僄儔乕偑敪惗偟傑偟偨丅",1,"CAPTURE-ERROR" : end
+	;playflag=1 ; 婲摦僼儔僌 僆儞
+	
+	// 夋憸傪斾妑偡傞偨傔偵曐懚偡傞壖憐僂傿儞僪僂傪嶌惉
+	buffer 3,320,240 : dim first, 3 : first = 3,0,0 ; 曐懚僂傿儞僪僂1
+	buffer 4,320,240 : dim second, 3 : second = 4,0,0 ; 曐懚僂傿儞僪僂1
+	buffer 5,dsc_CapX,dsc_CapY ; 僇儊儔塮憸僂傿儞僪僂
+	
+	goto *main ; 塮憸張棟傊
+	
+/*-----僂傿儞僪僂儃僞儞摍敾掕-----*/
+*clickBranch
+	if wparam == 1 {
+		// 僞僀僩儖僶乕晹暘
+		if (0 <= mousey && mousey <= 25){
+			if (ginfo(12)-25*2 <= mousex && mousex < ginfo(12)-25*1){ // 嵟彫壔儃僞儞
+				ShowWindow hwnd,$0002
+			}else : if (ginfo(12)-25*1 <= mousex && mousex < ginfo(12)-25*0){ // 暵偠傞儃僞儞
+				goto *exit
+			}else{ // 偦傟埲奜偺晹暘
+				sendmsg hwnd,WM_NCLBUTTONDOWN,HTCAPTION,0
+			}
+		}
+	
+		// 儃僞儞晹暘
+		if (phase = 0){ // 弶婜夋柺
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (70 <= mousey && mousey <= 100) ){
+				goto *booting
+			}
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (110 <= mousey && mousey <= 140) ){
+				wait 10:goto *hide_eva
+			}
+		}else : if (phase = 1){ // 僇儊儔慖戰夋柺
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (110 <= mousey && mousey <= 140) ){
+				goto *alertDialog
+			}
+		}else : if (phase = 2){ // 僇儊儔愝掕夋柺
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (40 <= mousey && mousey <= 70) ){
+				gosub *prop
+			}
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (80 <= mousey && mousey <= 110) ){
+				goto *watch
+			}
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (120 <= mousey && mousey <= 150) ){
+				goto *watch_eva
+			}
+		}
+	
+		
+	}
+	return
+/*-----僂傿儞僪僂儃僞儞摍敾掕-----*/
+	
+/*-----僇儊儔僾儘僷僥傿傪婲摦--*/
+*prop
+	;if playflag=1{
+		//嵞惗拞偱側偄偲幐攕偟傑偡丅
+		dsc_FilterProp  hwnd , "Device Filter"
+	;}
+	return
+/*-----僇儊儔僾儘僷僥傿傪婲摦--*/
+
+*main
+	redraw 0
+	gsel 0
+	color 0: boxf 2, 2, ginfo(12)-2-25*2, 25-3: boxf 3,ginfo(13)/2,ginfo(12)-3,ginfo(13)-3
+	count = count + 1 ; 僼儗乕儉悢傪僇僂儞僩
+ 
+    x = 320 : y = 240 ; 塮憸偺戝偒偝
+    gsel 5 ; 塮憸梡僂傿儞僪僂傪傾僋僥傿僽
+    pos 0,0
+    dsc_GetImage  hdc , 0 , 0 , dsc_CapX , dsc_CapY ; 僇儊儔塮憸傪僉儍僾僠儍
+    redraw 1 ; 夋柺傪懄嵗偵昤夋
+    gsel 3+(count\2) ; 僼儗乕儉悢偵墳偠偰夋憸曐懚梡僂傿儞僪僂
+    pos 0,0
+    gzoom x,y,5,0,0,dsc_CapX,dsc_CapY-10,0 ; 僇儊儔塮憸傪曐懚
+    await 10
+ 
+	if (count = 1){
+		imghclsdel ; 夋憸張棟偺弶婜壔
+		prepercent = imgh(ginfo(12),ginfo(13),first,second,10) ; 崱偺僼儗乕儉偲1僼儗乕儉慜傪斾妑
+	}
+	if (count >= 2){
+		imghclsdel ; 夋憸張棟偺弶婜壔
+		percent = imgh(ginfo(12),ginfo(13),first,second,10) ; 崱偺僼儗乕儉偲1僼儗乕儉慜傪斾妑
+		//曄壔棪偺嵎暘偑婯掕抣傛傝戝偒偄偐偳偆偐
+		if absf(percent-prepercent)>flag {
+			result = "true" ; 曄壔偁傝
+			// 曄壔偑偁偭偨偐壜帇壔
+			gsel 0
+			color 237,57,60
+			boxf 30,ginfo(13)-50,ginfo(12)-30,ginfo(13)-20
+	
+			moji = "専弌"
+			font "HGP嫵壢彂懱",50,17
+			ls=strlen(moji) : dim size,2
+			GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+			x = size(0) : y = size(1)
+			tx = double(ginfo(12)-x)/2 : ty = ginfo(13)-y-60 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+			pos tx,ty : mes moji
+		}else{
+			result = "false" ; 曄壔側偟
+			// 曄壔偑偁偭偨偐壜帇壔
+			gsel 0
+			color 230,170,15
+			boxf 30,ginfo(13)-50,ginfo(12)-30,ginfo(13)-20
+	
+			moji = "娔帇"
+			font "HGP嫵壢彂懱",50,17
+			ls=strlen(moji) : dim size,2
+			GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+			x = size(0) : y = size(1)
+			tx = double(ginfo(12)-x)/2 : ty = ginfo(13)-y-60 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+			pos tx,ty : mes moji
+		}
+		gsel 0 ; 儊僀儞夋柺傪傾僋僥傿僽
+		repeat
+			color 0
+			if (cnt\20 >= 10):line 30+cnt,ginfo(13)-50-2,30+cnt-10,ginfo(13)-20+2
+			if (cnt-10 >= ginfo(12)-30*2):break
+		loop
+		pos 2,2
+		color 230,170,15
+		;title str(percent)+"::"+x+","+y+"::"+result+"::"+str(absf(percent-prepercent)) ; 僞僀僩儖偵儘僌昞帵
+		moji = str(percent)+"::"+x+","+y+"::"+result+"::"+str(absf(percent-prepercent)) ; 僞僀僩儖偵儘僌昞帵
+		font "HGP嫵壢彂懱",10,17
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+		x = size(0) : y = size(1)
+		tx = 3 : ty = double(25-y)/2 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+		pos tx,ty : mes moji
+		prepercent = percent ; 斾妑偺偨傔曄壔棪傪曐懚
+	}
+	
+	await 10
+	redraw 1
+    goto *main ; 儖乕僾
+ 
+/*-----僇儊儔挷惍-----*/
+
+/*-----愝掕夋柺僉乕張棟-----*/
+*SettingKey
+	if wparam==83 : goto *prop
+	if wparam==78 : goto *watch
+	if wparam==69 : goto *watch_eva
+	return
+/*-----愝掕夋柺僉乕張棟-----*/
+
+/*-----娔帇張棟-----*/
+*watch
+	onclick 0
+	onkey 0
+	gsel 0,-1 ; 儊僀儞夋柺傪晄壜帇壔
+	count = count + 1 ; 僼儗乕儉悢傪僇僂儞僩
+ 
+    x = 320 : y = 240 ; 塮憸偺戝偒偝
+    gsel 5 ; 塮憸梡僂傿儞僪僂傪傾僋僥傿僽
+    pos 0,0
+    dsc_GetImage  hdc , 0 , 0 , dsc_CapX , dsc_CapY ; 僇儊儔塮憸傪僉儍僾僠儍
+    redraw 1 ; 夋柺傪懄嵗偵昤夋
+    gsel 3+(count\2) ; 僼儗乕儉悢偵墳偠偰夋憸曐懚梡僂傿儞僪僂
+    pos 0,0
+    gzoom x,y,5,0,0,dsc_CapX,dsc_CapY-10,0 ; 僇儊儔塮憸傪曐懚
+    await 10
+
+	if (count = 1){
+		imghclsdel ; 夋憸張棟偺弶婜壔
+		prepercent = imgh(ginfo(12),ginfo(13),first,second,10) ; 崱偺僼儗乕儉偲1僼儗乕儉慜傪斾妑
+	}
+	if (count >= 2){
+		imghclsdel ; 夋憸張棟偺弶婜壔
+		percent = imgh(ginfo(12),ginfo(13),first,second,10) ; 崱偺僼儗乕儉偲1僼儗乕儉慜傪斾妑
+		//曄壔棪偺嵎暘偑婯掕抣傛傝戝偒偄偐偳偆偐
+		if absf(percent-prepercent)>flag {
+			result = "true" ; 曄壔偁傝
+			goto *hide_system ; 僂傿儞僪僂傪徚偡張棟傊
+		}else{
+			result = "false" ; 曄壔側偟
+		}
+		prepercent = percent ; 斾妑偺偨傔曄壔棪傪曐懚
+	}
+	
+    goto *watch ; 儖乕僾
+
+/*-----娔帇張棟-----*/
+
+/*-----EVA儌乕僪愝掕-----*/ 
+*watch_eva
+	eva_mode = 1
+	goto *watch
+/*-----EVA儌乕僪愝掕-----*/ 
+
+/*-----僂傿儞僪僂傪徚偡堦楢偺棳傟(捠忢)-----*/
+*hide_system
+	dsc_Close ; 僇儊儔傪掆巭
+	if eva_mode == 1:goto *hide_eva ; EVA儌乕僪側傜偽張棟曄峏
+	
+	title "MAGISYSTEM-Beta"
+	gsel 0,-1 ; 儊僀儞僂傿儞僪僂傪晄壜帇壔
+	
+	// 僂傿儞僪僂僴儞僪儖偲偦傟傜偺嵗昗傪曐懚偡傞偨傔偵攝楍嶌惉
+	dim handle_num
+	dim handle_posx
+	dim handle_posy
+	
+	; 僐乕儖僶僢僋娭悢偺搊榐
+	setcallbk Proc, EnumWindowProc, *OnEnumWindowProc
+	
+	; 僩僢僾儗儀儖僂傿儞僪僂偺僴儞僪儖傪庢摼
+	count = 0
+	
+	;僩僢僾儗儀儖僂傿儞僪僂偺僴儞僪儖傪庢摼
+	EnumWindows varptr(Proc), 0
+	
+	gosub *WindowHide ; 僂傿儞僪僂傪徚偡張棟傊
+	
+	;僼僢僋傪僙僢僩(儃僞儞傪墴偟偨傜栠偡張棟傊峴偔愝掕)
+	khHook *onKeyHook
+	if stat=0 : dialog "僼僢僋幐攕" : end
+	stop
+/*-----僂傿儞僪僂傪徚偡堦楢偺棳傟(捠忢)-----*/
+
+/*-----僂傿儞僪僂傪徚偡堦楢偺棳傟(EVA)-----*/
+*hide_eva	
+	bgscr 0,ginfo_dispx,ginfo_dispy,2,0/*攝抲X*/,0/*攝抲Y*/ ; 僂傿儞僪僂傪榞側偟慡夋柺偵偡傞
+	buffer 1,ginfo_dispx,ginfo_dispy ; 僨僗僋僩僢僾僒僀僘偺壖憐僂傿儞僪僂傪嶌惉
+	
+	R = 100 ; 敿宎(榋妏宍偵愙偡傞墌偺敿宎)
+	dim O,2 ; 拞怱偺嵗昗丄乮P,Q乯偲愝掕偡傞
+	
+	// EMERGENCY偺昤夋奐巒
+	buffer 2 ; EMERGENCY昤夋梡壖憐僂傿儞僪僂
+	gsel 2 ; EMERGENCY昤夋梡傪傾僋僥傿僽
+	O = R,R ; 拞怱揰傪愝掕
+	
+	color 0,0,0 ; 崟怓愝掕
+	boxf ; 崟偵揾傝偮傇偡
+	i = 0.0 ; R偲昤夋拞偺敿宎偺嵎暘
+	
+	repeat // 榋妏宍偺慄傪彊乆偵彫偝偔偟側偑傜昤偄偰偄偔->揾傝偮傇偝傟偨榋妏宍偵側傞
+		if (i>=5):color 237,57,60 ; 奜懁 5px偼愒怓
+		if (i>=10):color 0,0,0 ; 拞娫 5px偼崟怓
+		if (i>=15):color 237,57,60 ; 撪懁 5px偼愒怓
+		hexagon double(R)-i,O ; 榋妏宍偺慄傪昤夋
+		await ; 張棟棊偪杊巭
+		if (i>=R):break ; 拞怱揰傑偱峴偭偨傜敳偗傞
+		i = i + 0.01 ; 0.01px敿宎傪弅傔傞
+	loop
+	
+	// EMERGENCY偺暥帤昤夋
+	color 0,0,0
+	font "HGP暯惉妏恨集笐蘔9",31,0
+	pos 24,85
+	print "EMERGENCY"
+	
+	font "HGP暯惉妏恨集笐蘔9",50,16
+	pos 73,30
+	print "仯"
+	pos 73,120
+	print "仴"
+	// EMERGENCY偺昤夋廔椆
+	
+	// 儊僀儞僂傿儞僪僂傪崟偵弶婜壔
+	gsel 0,-1
+	color 0,0,0
+	boxf
+
+	wait 100
+	
+	gsel 0,2 ; 儊僀儞僂傿儞僪僂傪壜帇壔
+	
+	gsel 1 ; 壖憐僂傿儞僪僂偵昤夋弨旛
+	
+	; 僨僗僋僩僢僾夋柺偺僨僶僀僗僐儞僥僉僗僩庢摼
+	hdcScreen = CreateDC("DISPLAY", NULL, NULL, NULL)
+	
+	; 僨僗僋僩僢僾夋柺偺夋憸傪僐僺乕
+	BitBlt hdc, 0, 0, ginfo_dispx, ginfo_dispy, hdcScreen, 0, 0, SRCCOPY | CAPTUREBLT
+	
+	; 僨僶僀僗僐儞僥僉僗僩嶍彍
+	DeleteDC hdcScreen
+	
+	;昤夋僂傿儞僪僂傪巜掕
+	gsel 0
+	
+	;儅僂僗僇乕僜儖晄壜帇
+	mouse -1
+	
+	;夋柺傪崟偵僼僃乕僪傾僂僩
+	for alpha,255,0,-4
+		redraw 0
+		boxf
+		gmode 3,ginfo_dispx,ginfo_dispy,alpha
+		gcopy 1,0,0,ginfo_dispx,ginfo_dispy
+		await 5
+		redraw 1
+	next
+	
+	wait 10
+	
+	ds_play 3,1 ; 僒僂儞僪嵞惗
+	
+	// EMERGENCY傪揰柵巒傑傝
+	alpha = 0
+	for alpha,0,(180)*2/*(180)x夞悢*/,2/*懍搙*/
+	
+		gsel 0
+		redraw 0
+		color 0,0,0
+		boxf
+		gmode 4,R*2,R*2,absf(sin(deg2rad(alpha))*255)
+		
+		Q = 0
+		repeat
+		
+			;2n-1峴栚
+			P = -R/2;嵟弶偺X嵗昗
+			repeat
+				O = P,Q-sqrt(3)*R/2;拞怱嵗昗愝掕
+				pos O(0)-R,O(1)-R
+				gcopy 2,0,0
+				if (P>ginfo(12)):break
+				P = P+(R*3)
+			loop	
+		
+			;2n峴栚
+			P = R;嵟弶偺X嵗昗
+			repeat
+				O = P,Q;拞怱嵗昗愝掕
+				pos O(0)-R,O(1)-R
+				gcopy 2,0,0
+				if (P>ginfo(12)):break
+				P = P+(R*3)
+			loop
+			
+			if (Q>ginfo(13)):break
+			Q = Q+(sqrt(3)*R)
+			
+		loop
+		
+		redraw 1
+		await
+	next
+	// EMERGENCY傪揰柵廔傢傝
+	
+	ds_stop 3,1 ; 僒僂儞僪嵞惗
+	ds_play 5,1 ; 僒僂儞僪嵞惗
+	
+	// EVA晽僌儔僼傿僢僋僗昤夋張棟
+	boxf
+	redraw 0
+	
+	color 230,170,15
+	boxf 10,10,ginfo_dispx-10,ginfo_dispy-10
+	
+	color 0,0,0
+	boxf 15,15,ginfo_dispx-15,ginfo_dispy-15
+	
+	color 230,170,15
+	boxf 30,30,40,70
+	boxf 50,30,60,70
+	boxf ginfo_dispx-40,30,ginfo_dispx-30,70
+	boxf ginfo_dispx-60,30,ginfo_dispx-50,70
+	boxf 30,ginfo_dispy-70,40,ginfo_dispy-30
+	boxf 50,ginfo_dispy-70,60,ginfo_dispy-30
+	boxf ginfo_dispx-40,ginfo_dispy-70,ginfo_dispx-30,ginfo_dispy-30
+	boxf ginfo_dispx-60,ginfo_dispy-70,ginfo_dispx-50,ginfo_dispy-30
+		
+	moji = "Blood Type = UNKNOWN"
+	posx = 60
+	repeat // 偪傚偆偳偄偄僼僅儞僩僒僀僘傪挷傋傞
+		font "HGP嫵壢彂懱",double(cnt)/100,16
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+		x = size(0) : y = size(1)
+		if (ginfo_dispx-posx*2 <= x) {
+			point = cnt
+			break
+		}
+		await
+	loop
+	
+	;if (eva_mode == 1){
+		
+	ds_open 4,dir_cur+"/voice/006.wav" ; 儃僀僗撉傒崬傒
+	ds_seek 4,0 ; 嵞惗埵抲傪嵟弶偵偡傞
+	ds_play 4,0 ; 僒僂儞僪嵞惗
+	
+	;}
+	
+	redraw 0
+	
+	moji = "Monitored Target Object"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/4-y ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	moji = "MAGI SYSTEM 1񑓛"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 暥帤偺暆偲崅偝傪庢摼
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)*3/4 ; 昤夋埵抲傪愝掕(暥帤偑拞墰懙偊偵側傞傛偆)
+	pos tx,ty : mes moji
+	
+	if (eva_mode == 1){
+		
+	// 曄壔偺偁偭偨帪偺塮憸傪庢摼偟偰昤夋
+	gsel 3+(count\2)
+	x = ginfo(12) : y = ginfo(13)
+	gsel 0
+	; 僨僓僀儞偵崌偆傛偆儕僒僀僘
+	zoomx = double(ginfo_dispx-70*2)/x
+	zoomy = (double(ginfo_dispy)/2-20)/y
+	if (zoomx >= zoomy):zoomx = zoomy
+	if (zoomx < zoomy):zoomy = zoomx
+	pos double(ginfo_dispx-zoomx*x)/2,double(ginfo_dispy-zoomy*y)/2
+	gzoom zoomx*x,zoomy*y,3+((count+1)\2),0,0,x,y,1
+	
+	}
+	
+	redraw 1
+	
+	if (eva_mode == 1):await 1800
+	
+	// 暘愅拞偲昞帵
+	repeat
+		redraw 0
+		
+		color 0,0,0
+		boxf 61,61,ginfo_dispx-61,ginfo_dispy-61
+		color 230,170,15
+		
+		if (cnt\2 = 1){
+		
+			moji = "Analysing ..."
+			font "HGP嫵壢彂懱",double(point-1)/100,16
+			ls=strlen(moji) : dim size,2
+			GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+			x = size(0) : y = size(1)
+			tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy-y)/2
+			pos tx,ty : mes moji
+		}
+		
+		moji = "Monitored Target Object"
+		font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+		x = size(0) : y = size(1)
+		tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/4-y
+		pos tx,ty : mes moji
+		
+		moji = "MAGI SYSTEM 1񑓛"
+		font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+		x = size(0) : y = size(1)
+		tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)*3/4
+		pos tx,ty : mes moji
+		
+		redraw 1
+		await 150
+		
+		if (cnt >= 25):break
+		
+	loop
+	
+	// 僷僞乕儞晄柧偲昞帵
+	redraw 0
+	
+	color 0,0,0
+	boxf 61,61,ginfo_dispx-61,ginfo_dispy-61
+	color 230,170,15
+	
+	moji = "Blood Type = UNKNOWN"
+	font "HGP嫵壢彂懱",double(point-1)/100,16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/2
+	pos tx,ty : mes moji
+	
+	moji = "Pattern Analysis:"
+	font "HGP嫵壢彂懱",double(point-1)/100,16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/2-y
+	pos tx,ty : mes moji
+	
+	moji = "Monitored Target Object"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/4-y
+	pos tx,ty : mes moji
+	
+	moji = "MAGI SYSTEM 1񑓛"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)*3/4
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	// 儃僀僗傪嵞惗
+	ds_open 4,dir_cur+"/voice/008.wav"
+	ds_seek 4,0
+	ds_play 4,0
+	
+	wait 500
+	
+	// 戞堦庬愴摤攝抲偺昞帵
+	redraw 0
+	
+	color 0,0,0
+	boxf
+	
+	color 237,57,60
+	boxf 10,10,ginfo_dispx-10,ginfo_dispy-10
+	
+	color 0,0,0
+	boxf 15,15,ginfo_dispx-15,ginfo_dispy-15
+	
+	color 237,57,60
+	boxf 30,30,40,70
+	boxf 50,30,60,70
+	boxf ginfo_dispx-40,30,ginfo_dispx-30,70
+	boxf ginfo_dispx-60,30,ginfo_dispx-50,70
+	boxf 30,ginfo_dispy-70,40,ginfo_dispy-30
+	boxf 50,ginfo_dispy-70,60,ginfo_dispy-30
+	boxf ginfo_dispx-40,ginfo_dispy-70,ginfo_dispx-30,ginfo_dispy-30
+	boxf ginfo_dispx-60,ginfo_dispy-70,ginfo_dispx-50,ginfo_dispy-30
+	
+	moji = "CONDITION  I "
+	font "HGP嫵壢彂懱",double(point-1)/100,16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/2
+	pos tx,ty : mes moji
+	
+	moji = "All System:"
+	font "HGP嫵壢彂懱",double(point-1)/100,16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/2-y
+	pos tx,ty : mes moji
+	
+	moji = "Top Level Command"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/4-y
+	pos tx,ty : mes moji
+	
+	moji = "MAGI SYSTEM 1񑓛"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)*3/4
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	// 儃僀僗偺嵞惗
+	ds_open 4,dir_cur+"/voice/009.wav"
+	ds_seek 4,0
+	ds_play 4,0
+	
+	wait 500
+	
+	// 儊僀儞僂傿儞僪僂傪摟夁張棟
+	;GetWindowLong hwnd , -20
+	SetWindowLong hwnd , -20 , stat | 0x00080000 ; 摟夁愝掕 (GWL_EXSTYLE偵WS_EX_LAYERED傪愝掕)
+	
+	for percent,100,50/*壜帇棪*/,-1
+		SetLayeredWindowAttributes hwnd , 0 , percent*255/100 , 2 ; 僂傿儞僪僂偺摟夁棪傪愝掕
+		await 50
+	next
+	
+	// 儃僀僗嵞惗
+	ds_open 4,dir_cur+"/voice/011.wav"
+	ds_seek 4,0
+	ds_play 4,0
+	
+	wait 300
+	
+	// 僂傿儞僪僂僴儞僪儖偲偦傟傜偺嵗昗傪曐懚偡傞偨傔偵攝楍嶌惉
+	dim handle_num
+	dim handle_posx
+	dim handle_posy
+	
+	; 僐乕儖僶僢僋娭悢偺搊榐
+	setcallbk Proc, EnumWindowProc, *OnEnumWindowProc
+	
+	; 僩僢僾儗儀儖僂傿儞僪僂偺僴儞僪儖傪庢摼
+	count = 0
+	
+	title "MAGISYSTEM-Beta"
+	;僩僢僾儗儀儖僂傿儞僪僂偺僴儞僪儖傪庢摼
+	EnumWindows varptr(Proc), 0
+	
+	eva_mode = 1:gosub *WindowHide ; 僂傿儞僪僂傪徚偡張棟傊
+	
+	wait 100
+	
+	// 儃僀僗嵞惗
+	ds_open 4,dir_cur+"/voice/012.wav"
+	ds_seek 4,0
+	ds_play 4,0
+	
+	wait 550
+	
+	// 摟夁僂傿儞僪僂傪晛捠偵昞帵
+	for percent,50,100,1
+		SetLayeredWindowAttributes hwnd , 0 , percent*255/100 , 2
+		await 50
+	next
+	await 20
+	// 備偭偔傝儊僀儞僂傿儞僪僂傪僼僃乕僪傾僂僩
+	for percent,100,0,-1
+		SetLayeredWindowAttributes hwnd , 0 , percent*255/100 , 2
+		ds_setvol 5,9000-double((100-percent)*(100-percent))/5
+		await 20
+	next
+	
+	ds_stop 5,1 ; BGM掆巭
+	
+	gsel 0,-1 ; 儊僀儞僂傿儞僪僂傪晄壜帇壔
+	
+	// 尦偵栠偭偨帪偺僂傿儞僪僂傪嶌惉偟偰偍偔
+	redraw 0
+	
+	color 0,0,0
+	boxf
+	color 230,170,15
+	boxf 10,10,ginfo_dispx-10,ginfo_dispy-10
+	color 0,0,0
+	boxf 15,15,ginfo_dispx-15,ginfo_dispy-15
+	color 230,170,15
+	boxf 30,30,40,70
+	boxf 50,30,60,70
+	boxf ginfo_dispx-40,30,ginfo_dispx-30,70
+	boxf ginfo_dispx-60,30,ginfo_dispx-50,70
+	boxf 30,ginfo_dispy-70,40,ginfo_dispy-30
+	boxf 50,ginfo_dispy-70,60,ginfo_dispy-30
+	boxf ginfo_dispx-40,ginfo_dispy-70,ginfo_dispx-30,ginfo_dispy-30
+	boxf ginfo_dispx-60,ginfo_dispy-70,ginfo_dispx-50,ginfo_dispy-30
+	
+	moji = "CONDITION NORMAL"
+	font "HGP嫵壢彂懱",double(point-1)/100,16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/2
+	pos tx,ty : mes moji
+	
+	moji = "All Systems:"
+	font "HGP嫵壢彂懱",double(point-1)/100,16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/2-y
+	pos tx,ty : mes moji
+	
+	moji = "Top-Level Command"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)/4-y
+	pos tx,ty : mes moji
+	
+	moji = "MAGI SYSTEM 1񑓛"
+	font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+	x = size(0) : y = size(1)
+	tx = double(ginfo_dispx-x)/2 : ty = double(ginfo_dispy)*3/4
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	;僼僢僋傪僙僢僩(儃僞儞傪墴偟偨傜栠偡張棟傊峴偔愝掕)
+	khHook *onKeyHook
+	if stat=0 : dialog "僼僢僋幐攕" : end
+	stop
+
+/*-----僂傿儞僪僂傪徚偡堦楢偺棳傟(EVA)-----*/
+
+/*-----僂傿儞僪僂傪庢摼偡傞偍傑偠側偄-----*/
+*OnEnumWindowProc
+	handle = callbkarg(0)
+	; 昞帵偝傟偰偄傞僂傿儞僪僂偺傒傪庢摼
+	IsWindowVisible handle
+	if stat {
+		sdim titlename, 256
+		GetWindowText handle, varptr(titlename), 256 // 僂傿儞僪僂柤傪庢摼
+		// 椺奜偺僂傿儞僪僂柤傪壓婰偵捛壛
+		if (titlename != "" && titlename != "MAGISYSTEM-Beta" && titlename != "Program Manager" && titlename != "IObit_StartMenu_Button"){
+			dim rect, 4
+			GetWindowRect handle, varptr(rect)
+			temp = strf("%10d  ",handle) + titlename+" "+rect(0)+","+rect(1)
+			
+			handle_num(count) = handle
+			handle_posx(count) = rect(0)
+			handle_posy(count) = rect (1)
+			count++
+		}
+	}
+	return 1
+/*-----僂傿儞僪僂傪庢摼偡傞偍傑偠側偄-----*/
+
+/*-----僂傿儞僪僂傪塀偡張棟-----*/
+*WindowHide
+	hide_flag = 1 ; 僂傿儞僪僂傪塀偟偨僼儔僌
+	
+	notesel data ; 僂傿儞僪僂堦棗傪曐懚偡傞曄悢
+	if (eva_mode == 1){ // EVA儌乕僪偺応崌(彊乆偵僂傿儞僪僂偑壓偑傞張棟)
+		ds_play 1,1 ; 僂傿儞僪僂偑壓偑傞壒 嵞惗
+		repeat
+			i = cnt
+			success_num = 0 ; 堏摦偟偨僂傿儞僪僂悢
+			stop_num = 0 ; 
+			foreach handle_num
+				IsIconic handle_num(cnt) ; 嵟彫壔偝傟偰偄傞僂傿儞僪僂偐偳偆偐
+				if stat=FALSE{ // 嵟彫壔偝傟偰偄側偗傟偽
+					; 僨僗僋僩僢僾偺壓掙偲崱偺僂傿儞僪僂偺Y嵗昗偑堦抳偟偨傜
+					; 旛峫:僂傿儞僪僂偛偲偵摦偒偵儔僌傪嶌傞偨傔100px堏摦偛偲偵師偺僂傿儞僪僂偑堏摦偟傑偡
+					if (ginfo_dispy == handle_posy(cnt)+i-cnt*100):ds_stop 2,1:ds_play 2,0:continue
+					; 僨僗僋僩僢僾偺壓掙傛傝僂傿儞僪僂偺Y嵗昗偑戝偒偐偭偨傜
+					if (ginfo_dispy < handle_posy(cnt)+i-cnt*100):continue
+					; 100px偢傜偡張棟
+					if (i < cnt*100):continue
+					; 僂傿儞僪僂偺埵抲傪堏摦
+					SetWindowPos handle_num(cnt),$0,handle_posx(cnt),handle_posy(cnt)+i-cnt*100,0,0,$15
+					success_num ++ ; 堏摦偟偨僂傿儞僪僂悢傪僇僂儞僩
+				}
+			loop
+			if (success_num == 0):break ; 堏摦偟偨僂傿儞僪僂偑側偗傟偽敳偗傞
+			await 10
+		loop
+		ds_stop 1,1 ; 僂傿儞僪僂偑壓偑傞壒 掆巭
+	}
+	
+	// 僂傿儞僪僂傪塀偡張棟
+	foreach handle_num
+		SetWindowPos handle_num(cnt),$0,handle_posx(cnt),handle_posy(cnt),0,0,$97 ; 僂傿儞僪僂傪晄壜帇壔
+		noteadd ""+handle_num(cnt)+","+handle_posx(cnt)+","+handle_posy(cnt) , -1 ; 晄壜帇壔偟偨僂傿儞僪僂傪婰榐
+		await
+	loop
+	
+	//晄壜帇壔偟偨僂傿儞僪僂傪婰榐偟偰偍偔
+	notesave dir_cur+"/backup.dat"
+	return
+	
+/*-----僂傿儞僪僂傪塀偡張棟-----*/
+
+/*-----廔椆僉乕傪墴偟偨帪偺張棟-----*/
+*onKeyHook
+	if (khKeyCode == 27 && khStat == 1 && eva_mode == 1){ // EVA儌乕僪偐偮ESC僉乕偑墴偝傟懕偗偨傜
+		khUnhook ; 僉乕僼僢僋傪夝彍
+		gsel 0,2 ; 儊僀儞僂傿儞僪僂傪壜帇壔
+		
+		// 儊僀儞僂傿儞僪僂傪彊乆偵昞帵
+		for percent,0,100,1
+			SetLayeredWindowAttributes hwnd , 0 , percent*255/100 , 2
+			await 10
+		next
+		
+		// 塀偟偨僂傿儞僪僂傪栠偡
+		foreach handle_num
+			SetWindowPos handle_num(cnt),$0,handle_posx(cnt),handle_posy(cnt),0,0,$55
+			await
+		loop
+		await 100
+	
+		
+		// 僂傿儞僪僂堦棗傪嶍彍
+		exist dir_cur+"/backup.dat"
+		if strsize!=-1:	delete dir_cur+"/backup.dat"
+		
+		// 儊僀儞僂傿儞僪僂傪彊乆偵摟夁
+		for percent,100,70,-1
+			SetLayeredWindowAttributes hwnd , 0 , percent*255/100 , 2
+			await 50
+		next
+	
+		// 拲堄彂偒傪昞帵
+		moji = "Press Alt + F4 Key to EXIT..."
+		font "俵俽丂俹僑僔僢僋",double(point-1)/(100*4),16
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+		x = size(0) : y = size(1)
+		tx = double(ginfo_dispx-x)/2
+		pos tx, : mes moji
+		
+		moji = "Programed by 3846masa"
+		font "俵俽丂俹僑僔僢僋",double(point-1)/(100*3),16
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size)
+		x = size(0) : y = size(1)
+		tx = double(ginfo_dispx-x)/2
+		pos tx, : mes moji
+		hide_flag = 0
+		
+		ds_free ; 壒惡偺奐曻
+		onexit goto *exit2
+		stop
+	}
+	if (khKeyCode == 27 && khStat == 1){ // 捠忢儌乕僪偐偮ESC僉乕偑墴偝傟懕偗偨傜
+		khUnhook ; 僉乕僼僢僋傪夝彍
+		// 塀偟偨僂傿儞僪僂傪栠偡
+		foreach handle_num
+			SetWindowPos handle_num(cnt),$0,handle_posx(cnt),handle_posy(cnt),0,0,$55
+			await
+		loop
+		
+		gsel 0,1
+		hide_flag = 0
+	
+		// 僂傿儞僪僂堦棗傪嶍彍
+		exist dir_cur+"/backup.dat"
+		if strsize!=-1:	delete dir_cur+"/backup.dat"
+		goto *exit
+	}
+
+	return
+/*-----廔椆僉乕傪墴偟偨帪偺張棟-----*/
+
+/*-----僜僼僩廔椆偺張棟(晄嬶崌偑婲偒側偄傛偆偵偡傞偨傔)-----*/
+*exit
+	;if (eva_mode == 1):ds_free ; 壒惡偺奐曻
+	ds_free ; 壒惡偺奐曻
+	;dialog "phase1"
+	if playflag=1:dsc_Close ; 僇儊儔偺廔椆
+	;dialog "phase2"
+	if (hide_flag == 1){ // 塀偟偨僂傿儞僪僂傪栠偡
+		foreach handle_num
+			SetWindowPos handle_num(cnt),$0,handle_posx(cnt),handle_posy(cnt),0,0,$55
+			await
+		loop
+	}
+	;dialog "phaseend"
+	end
+	
+*exit2
+	wait 100
+	end
+/*-----僜僼僩廔椆偺張棟(晄嬶崌偑婲偒側偄傛偆偵偡傞偨傔)-----*/

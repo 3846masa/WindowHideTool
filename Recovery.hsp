@@ -1,0 +1,212 @@
+#include "user32.as"
+
+#uselib "gdi32.dll"
+#func  GetTextExtentPoint32 "GetTextExtentPoint32A" int,int,int,int
+
+#define WM_NCLBUTTONDOWN $000000A1
+#define HTCAPTION 2
+#define HTMINBUTTON 8
+
+goto *main
+	
+*clickBranchDialog
+	if wparam == 1 {
+		// ボタン部分
+		if (flag == -1){
+			if ( (30 <= mousex && mousex <= ginfo(12)-30) && (ginfo(13)-65 <= mousey && mousey <= ginfo(13)-35) ){
+				;dialog "Selected 'OK'"
+				end
+			}
+		}else:if(flag == 0){
+	
+		}
+	
+		
+	}
+	return
+
+*exit
+	end
+
+*main
+	flag = 0
+	exist dir_cur+"/backup.dat"
+	if strsize=-1:MessageBeep $30:goto *err01;:end
+	
+	// Window作成
+	bgscr 0,280,205,0,double(ginfo_dispx-280)/2,double(ginfo_dispy-205)/2
+	gsel 0,2
+	redraw 0
+	color 0:boxf:pos 0,50;:button "終了",*exit
+	color 230,170,15	: boxf 0, 0, ginfo(12), ginfo(13)
+	color 0				: boxf 2, 2, ginfo(12)-3, ginfo(13)-3
+	onclick gosub *clickBranchDialog
+	
+	color 230,170,15	: boxf 0, 0, ginfo(12), 25
+	repeat
+		color 0
+		if (cnt\20 >= 10):line 3+cnt,0,3+cnt-10,25
+		if (cnt-6 >= ginfo(12)-10):break
+	loop
+	
+	color 230,170,15	: boxf 0, ginfo(13)-25, ginfo(12), ginfo(13)
+	repeat
+		color 0
+		if (cnt\20 >= 10):line 3+cnt, ginfo(13)-25-3, 3+cnt-10, ginfo(13)-3
+		if (cnt-6 >= ginfo(12)-10):break
+	loop
+	
+	color 230,170,15
+	moji = "RECOVERY"
+	font "HGP教科書体",48,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 40 ; 描画位置を設定(文字が中央揃えになるよう)
+	pos tx,ty : mes moji
+	
+	color 230,170,15
+	moji = "ONLY"
+	font "HGP教科書体",48,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 80 ; 描画位置を設定(文字が中央揃えになるよう)
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	;wait 1000
+	;wait 10000
+	;end
+	
+	notesel data
+
+	noteload dir_cur+"/backup.dat"
+	
+	sdim buf, 256
+	
+	repeat noteinfo(0)
+		noteget buf, cnt
+		;mes buf
+	
+		count = cnt
+	
+		i = 0
+		getstr result, buf, i, ','
+		handle_num(count) = int ( result )
+		i += strsize
+		getstr result, buf, i, ','
+		handle_posx(count) = int ( result )
+		i += strsize
+		getstr result, buf, i, ','
+		handle_posy(count) = int ( result )
+		
+	loop
+	
+	foreach handle_num
+		redraw 0
+		color 0:boxf 2,135,ginfo(12)-3,ginfo(13)-27
+		SetWindowPos handle_num(cnt),$0,handle_posx(cnt),handle_posy(cnt),0,0,$55
+		color 230,170,15
+		moji = "ハンドル\""+handle_num(cnt)+"\"ヲ復元中"
+		font "HGP教科書体",24,1
+		ls=strlen(moji) : dim size,2
+		GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+		x = size(0) : y = size(1)
+		tx = double(ginfo(12)-x)/2 : ty = 145-double(y)/2 ; 描画位置を設定(文字が中央揃えになるよう)
+		pos tx,ty : mes moji
+		redraw 1
+		;mes ""+handle_num(cnt)+":Recover"
+		wait 100
+	loop
+	
+	delete dir_cur+"/backup.dat"
+	
+	color 0:boxf 2,135,ginfo(12)-3,ginfo(13)-27
+	color 237,57,60
+	moji = "処理ガ終了シマシタ"
+	font "HGP教科書体",30,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 145-double(y)/2 ; 描画位置を設定(文字が中央揃えになるよう)
+	pos tx,ty : mes moji
+	
+	wait 800
+	
+	end
+	
+*err01
+	flag = -1
+	// Window作成
+	bgscr 0,280,205,0,double(ginfo_dispx-280)/2,double(ginfo_dispy-205)/2
+	gsel 0,2
+	redraw 0
+	color 0:boxf:pos 0,50;:button "終了",*exit
+	color 237,57,60	: boxf 0, 0, ginfo(12), ginfo(13)
+	color 0				: boxf 2, 2, ginfo(12)-3, ginfo(13)-3
+	onclick gosub *clickBranchDialog
+	
+	color 237,57,60	: boxf 0, 0, ginfo(12), 25
+	repeat
+		color 0
+		if (cnt\20 >= 10):line 3+cnt,0,3+cnt-10,25
+		if (cnt-6 >= ginfo(12)-10):break
+	loop
+	
+	color 237,57,60	: boxf 0, ginfo(13)-25, ginfo(12), ginfo(13)
+	repeat
+		color 0
+		if (cnt\20 >= 10):line 3+cnt, ginfo(13)-25-3, 3+cnt-10, ginfo(13)-3
+		if (cnt-6 >= ginfo(12)-10):break
+	loop
+	
+	color 237,57,60
+	moji = "警告"
+	font "HGP教科書体",50,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 30 ; 描画位置を設定(文字が中央揃えになるよう)
+	pos tx,ty : mes moji
+	
+	color 237,57,60
+	moji = "\"backup.dat\"ガ存在ゼズ"
+	font "HGP教科書体",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = 85 ; 描画位置を設定(文字が中央揃えになるよう)
+	pos tx,ty : mes moji
+	
+	color 237,57,60
+	moji = "復元セズニ終了スル"
+	font "HGP教科書体",25,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2
+	pos tx, : mes moji
+	
+	color 237,57,60:boxf 30,ginfo(13)-65,ginfo(12)-30,ginfo(13)-35
+	color 0
+	moji = "了承"
+	posx = 30
+	boxH = 30
+	font "HGP教科書体",30,17
+	ls=strlen(moji) : dim size,2
+	GetTextExtentPoint32 hdc,varptr(moji),ls,varptr(size) ; 文字の幅と高さを取得
+	x = size(0) : y = size(1)
+	tx = double(ginfo(12)-x)/2 : ty = (ginfo(13)-65)+double(boxH-y)/2 ; 描画位置を設定(文字が中央揃えになるよう)
+	pos tx,ty : mes moji
+	
+	redraw 1
+	
+	repeat
+		stick key,0
+		if key&32:end
+		await
+	loop
+	
+	stop
